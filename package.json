@@ -1,0 +1,11 @@
+{
+  "name": "isomorphic-git-web-worker-emscripten-idbfs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "http-server public"
+  },
+  "dependencies": {
+    "http-server":"^14.1.1"
+  }
+}
