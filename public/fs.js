@@ -91,10 +91,16 @@ function toLfsStat(stat) {
 
 function fromWasiErrorToNodeError(e, ...args) {
   switch (e.errno) {
+    case 20:
+      return { code: "EEXIST", message: "EEXIST" };
     case 44:
-      return { code: "ENOENT", message: "ENOENT", args };
+      return { code: "ENOENT", message: "ENOENT" };
     case 54:
-      return { code: "ENOTDIR", message: "ENOTDIR", args };
+      return { code: "ENOTDIR", message: "ENOTDIR" };
+    case 55:
+      return { code: "ENOTEMPTY", message: "ENOTEMPTY" };
+    case 73:
+      return { code: "ETIMEDOUT", message: "ETIMEDOUT" };
     default:
       throw { e, code: "UNKNOWN", args };
   }

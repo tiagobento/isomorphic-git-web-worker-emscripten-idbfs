@@ -18,16 +18,26 @@ importScripts("fs.js");
 
 corsProxy =
   "https://cors-proxy-kie-sandbox.rhba-cluster-0ad6762cc85bcef5745bb684498c2436-0000.us-south.containers.appdomain.cloud";
-repoName = "kogito-examples";
+repoName = "swf-testing-folder";
 repoUrl = `https://github.com/tiagobento/${repoName}`;
 repoBranch = "main";
-dir = `/${repoName}`;
+dir = `/${repoName}_${new Date().getTime()}_${(Math.random() + 1).toString(36).substring(7)}`;
 
 Module.onRuntimeInitialized = async () => {
   FS.mkdir(dir);
   FS.mount(IDBFS, {}, dir);
+  // FS.mkdir("/kogito-examples_1662663511707");
+  // FS.mount(IDBFS, {}, "/kogito-examples_1662663511707");
+  // FS.mkdir("/kogito-examples_1662663540495");
+  // FS.mount(IDBFS, {}, "/kogito-examples_1662663540495");
+  // if (Math.random() >= 0.5) {
+  //   FS.mkdir("/kie-tools_1662666842462");
+  //   FS.mount(IDBFS, {}, "/kie-tools_1662666842462");
+  // }
 
-  console.log(`😎 Restoring from existing IndexedDB store named '${dir}' (if present)`);
+  console.log(
+    `😎 Restoring from existing IndexedDB store named '${dir}' (if present)`
+  );
   console.time("restore");
   await restoreFs();
   console.timeEnd("restore");
@@ -57,9 +67,14 @@ Module.onRuntimeInitialized = async () => {
   // console.timeEnd("fetch");
 
   console.log(`😎 Creating new file to commit...`);
-  console.time("commit");
-  await testCommit();
-  console.timeEnd("commit");
+  console.time("commit 1");
+  await testCommit(`myNewFile1.txt`);
+  console.timeEnd("commit 1");
+
+  console.log(`😎 Creating new file to commit...`);
+  console.time("commit 2");
+  await testCommit(`myNewFile2.txt`);
+  console.timeEnd("commit 2");
 
   console.log("😎 Running a pseudo `git status`...");
   console.time("status");
@@ -69,12 +84,52 @@ Module.onRuntimeInitialized = async () => {
 
   console.log("😎 Running `git log`...");
   console.time("log");
-  const log = await git.log({fs, dir});
-  console.info(JSON.stringify(log.map( s => ({payload: s.payload})), null, 2));
+  const log = await git.log({ fs, dir });
+  console.info(
+    JSON.stringify(
+      log.map((s) => ({ payload: s.payload })),
+      null,
+      2
+    )
+  );
   console.timeEnd("log");
+
+  console.log(`😎 Finding all for '${dir}'`);
+  console.time("findAllPersisted (hot)");
+  console.info((await findAllPersisted(dir)).length);
+  console.timeEnd("findAllPersisted (hot)");
+
+  // console.log(`😎 Finding all for '${"/kie-tools_1662666842462"}'`);
+  // console.time("findAllPersisted DMNs (cold)");
+  // console.info(
+  //   (await findAllPersisted("/kie-tools_1662666842462")).filter((p) =>
+  //     p.endsWith(".dmn")
+  //   ).length
+  // );
+  // console.timeEnd("findAllPersisted DMNs (cold)");
 
   console.log("😎 Done.");
 };
+
+async function findAll() {
+  return await git.listFiles({ fs, dir })
+}
+
+async function findAllPersisted(dir) {
+  const store = "FILE_DATA";
+  return new Promise((resolve) => {
+    const request = indexedDB.open(dir);
+    request.onerror = (event) => console.error(`Error opening '${dir}'`);
+    request.onsuccess = (dbEvent) => {
+      const keysQuery = dbEvent.target.result
+        .transaction(store)
+        .objectStore(store)
+        .getAllKeys();
+      keysQuery.onsuccess = (keysEvent) =>
+        resolve(keysEvent.target.result ?? []);
+    };
+  });
+}
 
 async function pseudoGitStatus() {
   const cache = {};
@@ -127,23 +182,23 @@ async function pseudoGitStatus() {
     .map((row) => row[_FILE]);
 }
 
-async function testCommit() {
-  const filepath = `myNewFile.txt`;
-  FS.writeFile(`${dir}/${filepath}`, "foo,bar,baz", { encoding: "utf-8"});
-  
+async function testCommit(filename) {
+  const filepath = filename;
+  FS.writeFile(`${dir}/${filepath}`, "foo,bar,baz", { encoding: "utf-8" });
+
   await git.add({
     fs,
     dir,
-    filepath: `myNewFile.txt`,
+    filepath: filename,
   });
 
   await git.commit({
     fs,
     dir,
-    message: "My 1st commit from Isomorphic Git + Emscripten's IDBFS",
+    message: `Add '${filename}'`,
     author: {
       name: "Tiago Bento",
-      email: "tfernand@redhat.com"
+      email: "tfernand@redhat.com",
     },
     ref: repoBranch,
   });
@@ -156,7 +211,7 @@ async function testCommit() {
     value: repoBranch,
   });
 
-  await flushFs();
+  // await flushFs();
 }
 
 async function syncfs(mode) {
