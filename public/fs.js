@@ -83,9 +83,9 @@ fs = {
 function toLfsStat(stat) {
   return {
     ...stat,
-    isDirectory: () => this.type === "dir",
-    isFile: () => this.type === "file",
-    isSymbolicLink: () => this.type === "symlink",
+    isDirectory: () => FS.isDir(stat.mode),
+    isFile: () => FS.isFile(stat.mode),
+    isSymbolicLink: () => FS.isLink(stat.mode),
   };
 }
 

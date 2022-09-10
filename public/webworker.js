@@ -12,28 +12,23 @@ var Module = {
 };
 
 importScripts("https://unpkg.com/wasm-git@0.0.8/lg2.js");
+
 importScripts("https://unpkg.com/isomorphic-git");
 importScripts("http.js");
 importScripts("fs.js");
 
 corsProxy =
   "https://cors-proxy-kie-sandbox.rhba-cluster-0ad6762cc85bcef5745bb684498c2436-0000.us-south.containers.appdomain.cloud";
-repoName = "swf-testing-folder";
-repoUrl = `https://github.com/tiagobento/${repoName}`;
-repoBranch = "main";
-dir = `/${repoName}_${new Date().getTime()}_${(Math.random() + 1).toString(36).substring(7)}`;
+repoName = "kogito-examples";
+repoUrl = `https://github.com/kiegroup/${repoName}`;
+repoBranch = "stable";
+dir = `/${repoName}_${new Date().getTime()}_${(Math.random() + 1)
+  .toString(36)
+  .substring(7)}`;
 
 Module.onRuntimeInitialized = async () => {
   FS.mkdir(dir);
   FS.mount(IDBFS, {}, dir);
-  // FS.mkdir("/kogito-examples_1662663511707");
-  // FS.mount(IDBFS, {}, "/kogito-examples_1662663511707");
-  // FS.mkdir("/kogito-examples_1662663540495");
-  // FS.mount(IDBFS, {}, "/kogito-examples_1662663540495");
-  // if (Math.random() >= 0.5) {
-  //   FS.mkdir("/kie-tools_1662666842462");
-  //   FS.mount(IDBFS, {}, "/kie-tools_1662666842462");
-  // }
 
   console.log(
     `😎 Restoring from existing IndexedDB store named '${dir}' (if present)`
@@ -56,10 +51,10 @@ Module.onRuntimeInitialized = async () => {
   });
   console.timeEnd("clone");
 
-  console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
-  console.time("flush");
-  await flushFs();
-  console.timeEnd("flush");
+  // console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
+  // console.time("flush");
+  // await flushFs();
+  // console.timeEnd("flush");
 
   // console.log("😎 Fetching the rest of the repo");
   // console.time("fetch");
@@ -97,7 +92,18 @@ Module.onRuntimeInitialized = async () => {
   console.log(`😎 Finding all for '${dir}'`);
   console.time("findAllPersisted (hot)");
   console.info((await findAllPersisted(dir)).length);
+  console.info(
+    (await findAllPersisted(dir)).filter((p) => p.endsWith(".dmn")).length
+  );
   console.timeEnd("findAllPersisted (hot)");
+
+  console.log(`😎 Finding in memory for '${dir}'`);
+  console.time("findAllInMemory (hot)");
+  console.info((await findAllInMemory(dir)).length);
+  console.info(
+    (await findAllInMemory(dir)).filter((p) => p.endsWith(".dmn")).length
+  );
+  console.timeEnd("findAllInMemory (hot)");
 
   // console.log(`😎 Finding all for '${"/kie-tools_1662666842462"}'`);
   // console.time("findAllPersisted DMNs (cold)");
@@ -108,11 +114,39 @@ Module.onRuntimeInitialized = async () => {
   // );
   // console.timeEnd("findAllPersisted DMNs (cold)");
 
+  console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
+  console.time("flush");
+  await flushFs();
+  console.timeEnd("flush");
+
   console.log("😎 Done.");
 };
 
 async function findAll() {
-  return await git.listFiles({ fs, dir })
+  return await git.listFiles({ fs, dir });
+}
+
+async function findAllInMemory(folder) {
+  const files = [];
+
+  async function impl(curFolder) {
+    for (const name of await fs.promises.readdir(curFolder)) {
+      const path = `${curFolder}/${name}`;
+      const stat = await fs.promises.stat(path);
+      if (stat.isFile()) {
+        files.push(path);
+      } else if (stat.isDirectory()) {
+        files.push(path);
+        await impl(path);
+      } else if (stat.isSymbolicLink()) {
+        const { path } = FS.lookupPath(path, { follow: true });
+        await impl(path);
+      }
+    }
+  }
+
+  await impl(folder);
+  return files;
 }
 
 async function findAllPersisted(dir) {
@@ -215,6 +249,7 @@ async function testCommit(filename) {
 }
 
 async function syncfs(mode) {
+  // return Promise.resolve();
   return new Promise((res) => {
     FS.syncfs(mode, res);
   });
