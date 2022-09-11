@@ -2,6 +2,7 @@ fs = {
   promises: {
     readFile: async (path, options) => {
       try {
+        // console.log("readFile",path, options)
         return FS.readFile(path, toReadWriteFileOptions(options));
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path, options);
@@ -9,6 +10,7 @@ fs = {
     },
     writeFile: async (file, data, options) => {
       try {
+        // console.log("writeFile",file, data, options)
         return FS.writeFile(file, data, toReadWriteFileOptions(options));
       } catch (e) {
         throw fromWasiErrorToNodeError(e, file, data, options);
@@ -16,6 +18,7 @@ fs = {
     },
     unlink: async (path) => {
       try {
+        // console.log("unlink",path)
         return FS.unlink(path);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path);
@@ -23,6 +26,7 @@ fs = {
     },
     readdir: async (path, options) => {
       try {
+        // console.log("readdir",path, options)
         return removeDotPaths(FS.readdir(path, options));
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path, options);
@@ -30,6 +34,7 @@ fs = {
     },
     mkdir: async (path, mode) => {
       try {
+        // console.log("mkdir",path, mode)
         return FS.mkdir(path, mode);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path, mode);
@@ -37,6 +42,7 @@ fs = {
     },
     rmdir: async (path) => {
       try {
+        // console.log("rmdir",path)
         return FS.rmdir(path);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path);
@@ -44,6 +50,7 @@ fs = {
     },
     stat: async (path, options) => {
       try {
+        // console.log("stat",path, options)
         return toLfsStat(FS.stat(path, options));
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path, options);
@@ -51,13 +58,15 @@ fs = {
     },
     lstat: async (path, options) => {
       try {
-        return toLfsStat(FS.lstat(path, options));
+        // console.log("lstat",path, options)
+        return toLfsStat(FS.stat(path, true));
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path, options);
       }
     },
     readlink: async (path, options) => {
       try {
+        // console.log("readlink",path, options)
         return FS.readlink(path, options);
       } catch (e) {
         throw new Error(fromWasiErrorToNodeError(e), path, option);
@@ -65,6 +74,7 @@ fs = {
     },
     symlink: async (target, path, type) => {
       try {
+        // console.log("symlink",target, path, type)
         return FS.symlink(target, path, type);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, target, path, typ);
@@ -72,6 +82,7 @@ fs = {
     },
     chmod: async (path, mode) => {
       try {
+        // console.log("chmod",path, mode)
         return FS.chmod(path, mode);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path, mod);
@@ -84,7 +95,6 @@ fs = {
 function toLfsStat(stat) {
   return {
     ...stat,
-    type: FS.isDir(stat.mode) ? "dir" : "file",
     isDirectory: () => FS.isDir(stat.mode),
     isFile: () => FS.isFile(stat.mode),
     isSymbolicLink: () => FS.isLink(stat.mode),
@@ -116,6 +126,5 @@ function toReadWriteFileOptions(options) {
 
 // Not doing that causes a loop.
 function removeDotPaths(a) {
-  
   return a.slice(2); // Remove "." and ".." entries
 }

@@ -14,7 +14,6 @@ var Module = {
 };
 
 importScripts("https://unpkg.com/wasm-git@0.0.8/lg2.js");
-
 importScripts("https://unpkg.com/isomorphic-git");
 importScripts("http.js");
 importScripts("fs.js");
@@ -27,9 +26,10 @@ repoBranch = "main";
 // dir = `/${repoName}_${new Date().getTime()}_${(Math.random() + 1)
 //   .toString(36)
 //   .substring(7)}`;
-dir = '/tiago10';
+dir = "/test123/test456";
 
 Module.onRuntimeInitialized = async () => {
+  FS.mkdir("/test123")
   FS.mkdir(dir);
   FS.mount(IDBFS, {}, dir);
 
@@ -54,31 +54,33 @@ Module.onRuntimeInitialized = async () => {
   });
   console.timeEnd("clone");
 
-  console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
-  console.time("flush");
-  await flushFs();
-  console.timeEnd("flush");
 
   // console.log("😎 Fetching the rest of the repo");
   // console.time("fetch");
   // await git.fetch({ fs, http, dir });
   // console.timeEnd("fetch");
 
-  console.log(`😎 Creating new file to commit...`);
-  console.time("commit 1");
-  await testCommit(`myNewFile1.txt`);
-  console.timeEnd("commit 1");
+  // console.log(`😎 Creating new file to commit...`);
+  // console.time("commit 1");
+  // await testCommit(`myNewFile1.txt`);
+  // console.timeEnd("commit 1");
 
-  console.log(`😎 Creating new file to commit...`);
-  console.time("commit 2");
-  await testCommit(`myNewFile2.txt`);
-  console.timeEnd("commit 2");
+  // console.log(`😎 Creating new file to commit...`);
+  // console.time("commit 2");
+  // await testCommit(`myNewFile2.txt`);
+  // console.timeEnd("commit 2");
 
   console.log("😎 Running a pseudo `git status`...");
   console.time("status");
   const statusMatrix = await pseudoGitStatus();
   console.info(statusMatrix);
   console.timeEnd("status");
+
+
+  console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
+  console.time("flush");
+  await flushFs();
+  console.timeEnd("flush");
 
   console.log("😎 Running `git log`...");
   console.time("log");
@@ -122,10 +124,10 @@ Module.onRuntimeInitialized = async () => {
   // await flushFs();
   // console.timeEnd("flush");
 
-  console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
-  console.time("flush");
-  await flushFs();
-  console.timeEnd("flush");
+  // console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
+  // console.time("flush");
+  // await flushFs();
+  // console.timeEnd("flush");
 
   console.log("😎 Done.");
   console.timeEnd("all");
@@ -227,7 +229,9 @@ async function pseudoGitStatus() {
 
 async function testCommit(filename) {
   const filepath = filename;
-  await fs.promises.writeFile(`${dir}/${filepath}`, "foo,bar,baz", { encoding: "utf-8" });
+  await fs.promises.writeFile(`${dir}/${filepath}`, "foo,bar,baz", {
+    encoding: "utf-8",
+  });
 
   await git.add({
     fs,
@@ -258,8 +262,15 @@ async function testCommit(filename) {
 }
 
 async function syncfs(mode) {
-  return new Promise((res) => {
-    IDBFS.syncfs({mountpoint: dir}, mode, res);
+  return new Promise((res, rej) => {
+    FS.syncfs({ mountpoint: dir }, mode, (err) => {
+      if (err) {
+        console.info(err);
+        rej(err);
+      } else {
+        res();
+      }
+    });
   });
 }
 
