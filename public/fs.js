@@ -2,14 +2,14 @@ fs = {
   promises: {
     readFile: async (path, options) => {
       try {
-        return FS.readFile(path, options);
+        return FS.readFile(path, toReadWriteFileOptions(options));
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path, options);
       }
     },
     writeFile: async (file, data, options) => {
       try {
-        return FS.writeFile(file, data, toWriteFileOptions(options));
+        return FS.writeFile(file, data, toReadWriteFileOptions(options));
       } catch (e) {
         throw fromWasiErrorToNodeError(e, file, data, options);
       }
@@ -80,15 +80,18 @@ fs = {
   },
 };
 
+// Reference: https://github.com/isomorphic-git/lightning-fs#fsstatfilepath-opts-cb
 function toLfsStat(stat) {
   return {
     ...stat,
+    type: FS.isDir(stat.mode) ? "dir" : "file",
     isDirectory: () => FS.isDir(stat.mode),
     isFile: () => FS.isFile(stat.mode),
     isSymbolicLink: () => FS.isLink(stat.mode),
   };
 }
 
+// Reference: https://github.com/emscripten-core/emscripten/blob/main/system/include/wasi/api.h
 function fromWasiErrorToNodeError(e, ...args) {
   switch (e.errno) {
     case 20:
@@ -106,10 +109,13 @@ function fromWasiErrorToNodeError(e, ...args) {
   }
 }
 
-function toWriteFileOptions(options) {
+// Reference: https://github.com/isomorphic-git/lightning-fs#fswritefilefilepath-data-opts-cb
+function toReadWriteFileOptions(options) {
   return typeof options === "string" ? { encoding: options } : options;
 }
 
+// Not doing that causes a loop.
 function removeDotPaths(a) {
+  
   return a.slice(2); // Remove "." and ".." entries
 }

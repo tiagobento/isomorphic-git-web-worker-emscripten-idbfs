@@ -1,3 +1,5 @@
+console.time("all");
+
 var Module = {
   locateFile: function (s) {
     console.info(`Loading '${s}'`);
@@ -21,10 +23,11 @@ corsProxy =
   "https://cors-proxy-kie-sandbox.rhba-cluster-0ad6762cc85bcef5745bb684498c2436-0000.us-south.containers.appdomain.cloud";
 repoName = "kogito-examples";
 repoUrl = `https://github.com/kiegroup/${repoName}`;
-repoBranch = "stable";
-dir = `/${repoName}_${new Date().getTime()}_${(Math.random() + 1)
-  .toString(36)
-  .substring(7)}`;
+repoBranch = "main";
+// dir = `/${repoName}_${new Date().getTime()}_${(Math.random() + 1)
+//   .toString(36)
+//   .substring(7)}`;
+dir = '/tiago10';
 
 Module.onRuntimeInitialized = async () => {
   FS.mkdir(dir);
@@ -51,10 +54,10 @@ Module.onRuntimeInitialized = async () => {
   });
   console.timeEnd("clone");
 
-  // console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
-  // console.time("flush");
-  // await flushFs();
-  // console.timeEnd("flush");
+  console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
+  console.time("flush");
+  await flushFs();
+  console.timeEnd("flush");
 
   // console.log("😎 Fetching the rest of the repo");
   // console.time("fetch");
@@ -89,13 +92,13 @@ Module.onRuntimeInitialized = async () => {
   );
   console.timeEnd("log");
 
-  console.log(`😎 Finding all for '${dir}'`);
-  console.time("findAllPersisted (hot)");
-  console.info((await findAllPersisted(dir)).length);
-  console.info(
-    (await findAllPersisted(dir)).filter((p) => p.endsWith(".dmn")).length
-  );
-  console.timeEnd("findAllPersisted (hot)");
+  // console.log(`😎 Finding all for '${dir}'`);
+  // console.time("findAllPersisted (hot)");
+  // console.info((await findAllPersisted(dir)).length);
+  // console.info(
+  //   (await findAllPersisted(dir)).filter((p) => p.endsWith(".dmn")).length
+  // );
+  // console.timeEnd("findAllPersisted (hot)");
 
   console.log(`😎 Finding in memory for '${dir}'`);
   console.time("findAllInMemory (hot)");
@@ -114,12 +117,18 @@ Module.onRuntimeInitialized = async () => {
   // );
   // console.timeEnd("findAllPersisted DMNs (cold)");
 
+  // console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
+  // console.time("flush");
+  // await flushFs();
+  // console.timeEnd("flush");
+
   console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
   console.time("flush");
   await flushFs();
   console.timeEnd("flush");
 
   console.log("😎 Done.");
+  console.timeEnd("all");
 };
 
 async function findAll() {
@@ -218,7 +227,7 @@ async function pseudoGitStatus() {
 
 async function testCommit(filename) {
   const filepath = filename;
-  FS.writeFile(`${dir}/${filepath}`, "foo,bar,baz", { encoding: "utf-8" });
+  await fs.promises.writeFile(`${dir}/${filepath}`, "foo,bar,baz", { encoding: "utf-8" });
 
   await git.add({
     fs,
@@ -245,13 +254,12 @@ async function testCommit(filename) {
     value: repoBranch,
   });
 
-  // await flushFs();
+  await flushFs();
 }
 
 async function syncfs(mode) {
-  // return Promise.resolve();
   return new Promise((res) => {
-    FS.syncfs(mode, res);
+    IDBFS.syncfs({mountpoint: dir}, mode, res);
   });
 }
 
