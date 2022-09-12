@@ -23,6 +23,7 @@ fs = {
     unlink: async (path) => {
       try {
         // console.log("unlink",path)
+        // FIXME: Update inos[dir]
         return FS.unlink(path);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path);
@@ -39,6 +40,7 @@ fs = {
     mkdir: async (path, mode) => {
       try {
         // console.log("mkdir",path, mode)
+        // FIXME: Update inos[dir]
         return FS.mkdir(path, mode);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path, mode);
@@ -47,6 +49,7 @@ fs = {
     rmdir: async (path) => {
       try {
         // console.log("rmdir",path)
+        // FIXME: Update inos[dir]
         return FS.rmdir(path);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path);
@@ -79,6 +82,7 @@ fs = {
     symlink: async (target, path, type) => {
       try {
         // console.log("symlink",target, path, type)
+        // FIXME: Update inos[dir]
         return FS.symlink(target, path, type);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, target, path, typ);
@@ -87,6 +91,7 @@ fs = {
     chmod: async (path, mode) => {
       try {
         // console.log("chmod",path, mode)
+        // FIXME: Update inos[dir]
         return FS.chmod(path, mode);
       } catch (e) {
         throw fromWasiErrorToNodeError(e, path, mod);
