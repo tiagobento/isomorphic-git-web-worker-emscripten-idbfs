@@ -1,3 +1,5 @@
+console.time("all");
+
 var Module = {
   locateFile: function (s) {
     console.info(`Loading '${s}'`);
@@ -19,18 +21,33 @@ importScripts("fs.js");
 corsProxy =
   "https://cors-proxy-kie-sandbox.rhba-cluster-0ad6762cc85bcef5745bb684498c2436-0000.us-south.containers.appdomain.cloud";
 repoName = "kogito-examples";
-repoUrl = `https://github.com/tiagobento/${repoName}`;
-repoBranch = "main";
-dir = `/${repoName}`;
+repoUrl = `https://github.com/kiegroup/${repoName}`;
+repoBranch = "stable";
+
+dir = `/${repoName}__WOW4`;
 
 Module.onRuntimeInitialized = async () => {
-  FS.mkdir(dir);
-  FS.mount(IDBFS, {}, dir);
+  console.log(`😎 Init mounted '${dir}'`);
+  console.time("init");
+  await initFs();
+  console.timeEnd("init");
 
-  console.log(`😎 Restoring from existing IndexedDB store named '${dir}' (if present)`);
+  console.log(
+    `😎 Restoring from existing IndexedDB store named '${dir}' (if present)`
+  );
   console.time("restore");
   await restoreFs();
   console.timeEnd("restore");
+
+  console.log("😎 Running a pseudo `git status`...");
+  console.time("pseudo-status");
+  console.info(await pseudoGitStatus());
+  console.timeEnd("pseudo-status");
+
+  console.log("😎 Running a `git status`...");
+  console.time("status");
+  console.info(await gitStatus());
+  console.timeEnd("status");
 
   console.log("😎 Cloning...");
   console.time("clone");
@@ -61,20 +78,63 @@ Module.onRuntimeInitialized = async () => {
   await testCommit();
   console.timeEnd("commit");
 
-  console.log("😎 Running a pseudo `git status`...");
+  console.log("😎 Running a `git status`...");
   console.time("status");
-  const statusMatrix = await pseudoGitStatus();
-  console.info(statusMatrix);
+  console.info(await gitStatus());
   console.timeEnd("status");
 
-  console.log("😎 Running `git log`...");
-  console.time("log");
-  const log = await git.log({fs, dir});
-  console.info(JSON.stringify(log.map( s => ({payload: s.payload})), null, 2));
-  console.timeEnd("log");
+  console.log("😎 Running a pseudo `git status`...");
+  console.time("pseudo-status");
+  console.info(await pseudoGitStatus());
+  console.timeEnd("pseudo-status");
+  
+  console.log(`😎 Flushing in-memory '${dir}' to IndexedDB...`);
+  console.time("flush");
+  await flushFs();
+  console.timeEnd("flush");
+
+  console.log(`😎 Deinit mounted '${dir}'`);
+  console.time("deinit");
+  await deinitFs();
+  console.timeEnd("deinit");
 
   console.log("😎 Done.");
+  console.timeEnd("all");
+
+  // console.log(`😎 Finding in memory for '${dir}'`);
+  // console.time("findAllInMemory (hot)");
+  // for (const a of await findAllInMemory(dir)) {
+  //   console.info(a);
+  // }
+  // console.timeEnd("findAllInMemory (hot)");
 };
+
+// async function findAllPersisted(dir) {
+//   const store = "FILE_DATA";
+//   return new Promise((resolve) => {
+//     const request = indexedDB.open(dir);
+//     request.onerror = (event) => console.error(`Error opening '${dir}'`);
+//     request.onsuccess = (dbEvent) => {
+//       const keysQuery = dbEvent.target.result
+//         .transaction(store)
+//         .objectStore(store)
+//         .getAllKeys();
+//       keysQuery.onsuccess = (keysEvent) =>
+//         resolve(keysEvent.target.result ?? []);
+//     };
+//   });
+// }
+
+async function gitStatus() {
+  const _FILE = 0;
+  const _HEAD = 1;
+  const _WD = 2;
+  const _STAGE = 3;
+
+  return (await git.statusMatrix({ fs, dir }))
+    .filter((row) => row[_HEAD] !== row[_WD] || row[_WD] !== row[_STAGE])
+    .map((row) => row[_FILE]);
+}
 
 async function pseudoGitStatus() {
   const cache = {};
@@ -128,14 +188,26 @@ async function pseudoGitStatus() {
 }
 
 async function testCommit() {
-  const filepath = `myNewFile.txt`;
-  FS.writeFile(`${dir}/${filepath}`, "foo,bar,baz", { encoding: "utf-8"});
-  
+  const filepath = `myNewFileTTT_1.txt`;
+  await fs.promises.writeFile(`${dir}/${filepath}`, "foo,bar,baz", {
+    encoding: "utf-8",
+  });
+
+  console.log("😎 Running a pseudo `git status`...");
+  console.time("pseudo-status");
+  console.info(await gitStatus());
+  console.timeEnd("pseudo-status");
+
   await git.add({
     fs,
     dir,
-    filepath: `myNewFile.txt`,
+    filepath,
   });
+
+  console.log("😎 Running a pseudo `git status`...");
+  console.time("pseudo-status");
+  console.info(await gitStatus());
+  console.timeEnd("pseudo-status");
 
   await git.commit({
     fs,
@@ -143,10 +215,15 @@ async function testCommit() {
     message: "My 1st commit from Isomorphic Git + Emscripten's IDBFS",
     author: {
       name: "Tiago Bento",
-      email: "tfernand@redhat.com"
+      email: "tfernand@redhat.com",
     },
     ref: repoBranch,
   });
+
+  console.log("😎 Running a pseudo `git status`...");
+  console.time("pseudo-status");
+  console.info(await gitStatus());
+  console.timeEnd("pseudo-status");
 
   await git.writeRef({
     fs,
@@ -156,19 +233,8 @@ async function testCommit() {
     value: repoBranch,
   });
 
-  await flushFs();
-}
-
-async function syncfs(mode) {
-  return new Promise((res) => {
-    FS.syncfs(mode, res);
-  });
-}
-
-async function flushFs() {
-  return syncfs(false);
-}
-
-async function restoreFs() {
-  return syncfs(true);
+  console.log("😎 Running a pseudo `git status`...");
+  console.time("pseudo-status");
+  console.info(await gitStatus());
+  console.timeEnd("pseudo-status");
 }
