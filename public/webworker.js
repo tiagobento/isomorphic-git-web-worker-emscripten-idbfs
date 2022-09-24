@@ -13,15 +13,15 @@ var Module = {
 
 importScripts("https://unpkg.com/wasm-git@0.0.8/lg2.js");
 
-importScripts("https://unpkg.com/isomorphic-git");
+importScripts("isogit.js");
 importScripts("http.js");
 importScripts("fs.js");
 
 corsProxy =
   "https://cors-proxy-kie-sandbox.rhba-cluster-0ad6762cc85bcef5745bb684498c2436-0000.us-south.containers.appdomain.cloud";
-repoName = "kogito-examples";
+repoName = "drools";
 repoUrl = `https://github.com/kiegroup/${repoName}`;
-repoBranch = "stable";
+repoBranch = "main";
 dir = `/${repoName}_${new Date().getTime()}_${(Math.random() + 1)
   .toString(36)
   .substring(7)}`;
@@ -181,6 +181,8 @@ async function pseudoGitStatus() {
       if (filepath.startsWith(".git")) {
         return null;
       }
+      
+      if (!filepath.endsWith(".dmn") && !filepath.endsWith(".bpmn") && !filepath.endsWith(".pmml")) return;
 
       // For now, just bail on directories
       const workdirType = workdir && (await workdir.type());
@@ -188,7 +190,7 @@ async function pseudoGitStatus() {
 
       const stageType = stage && (await stage.type());
       if (stageType === "commit") return null;
-      if (stageType === "tree" || stageType === "special") return;
+      if (stageType === "tree" || stageType === "special") return;      
 
       // Figure out the oids, using the staged oid for the working dir oid if the stats match.
       const stageOid = stage ? await stage.oid() : undefined;
@@ -249,7 +251,6 @@ async function testCommit(filename) {
 }
 
 async function syncfs(mode) {
-  // return Promise.resolve();
   return new Promise((res) => {
     FS.syncfs(mode, res);
   });
