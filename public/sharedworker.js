@@ -1,4 +1,4 @@
-importScripts('webworker.js');
+importScripts('webworker-isogit.js');
 
 onconnect = (e) => {
   const port = e.ports[0];

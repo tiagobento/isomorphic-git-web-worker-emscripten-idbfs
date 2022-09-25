@@ -1,7 +1,4 @@
-window.w1 = new Worker("webworker.js");
-// window.w2 = new Worker("webworker.js");
-// window.w3 = new Worker("webworker.js");
-// window.w4 = new Worker("webworker.js");
+window.w1 = new Worker("webworker-isogit.js");
 
 // window.sharedWorker = new SharedWorker("sharedworker11.js", "tiago11");
 // window.sharedWorker.port.start();

@@ -19,7 +19,7 @@ importScripts("fs.js");
 
 corsProxy =
   "https://cors-proxy-kie-sandbox.rhba-cluster-0ad6762cc85bcef5745bb684498c2436-0000.us-south.containers.appdomain.cloud";
-repoName = "drools";
+repoName = "kogito-examples";
 repoUrl = `https://github.com/kiegroup/${repoName}`;
 repoBranch = "main";
 dir = `/${repoName}_${new Date().getTime()}_${(Math.random() + 1)
